@@ -1,6 +1,9 @@
-import db from '../helpers/conn';
+import conn from '../helpers/conn';
 import passwordHelper from '../helpers/password';
 import generateToken from '../helpers/token';
+
+const db = conn();
+db.connect();
 
 class UsersController {
   /**
@@ -28,7 +31,7 @@ class UsersController {
       values: [firstName, lastName, email, hashedPassword, isAdmin],
     };
 
-    UsersController.signupQuery(request, response, query);
+    UsersController.signupQuery(response, query);
   }
 
   /**
@@ -39,8 +42,8 @@ class UsersController {
    *  @return {Object} json
    *
    */
-  static signupQuery(request, response, query) {
-    db.dbQuery(query)
+  static signupQuery(response, query) {
+    db.query(query)
       .then((dbResult) => {
         const currentToken = generateToken({ id: dbResult.rows[0].id, isAdmin: dbResult.rows[0].is_admin });
         process.env.CURRENT_TOKEN = currentToken;
@@ -52,7 +55,8 @@ class UsersController {
             token: currentToken
           },
         });
-      });
+      })
+      .catch();
   }
 }
 
