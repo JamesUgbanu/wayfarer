@@ -1,6 +1,7 @@
 import conn from '../helpers/conn';
 import passwordHelper from '../helpers/password';
 import generateToken from '../helpers/token';
+import validationErrors from '../helpers/validationErrors';
 
 const db = conn();
 db.connect();
@@ -57,6 +58,74 @@ class UsersController {
         });
       })
       .catch();
+  }
+
+  /**
+   *  Sign in user
+   *  @param {Object} requestuest
+   *  @param {Object} response
+   *  @return {Object} json
+   */
+  static signIn(request, response) {
+    const { email, password } = request.body;
+    const query = `SELECT * FROM user WHERE email = '${email}'`;
+
+    db.query(query)
+      .then((dbResult) => {
+        if (dbResult.rowCount === 0) return UsersController.wrongEmailResponse(response);
+        if (!passwordHelper.comparePasswords(password.trim(), dbResult.rows[0].password)) {
+          return UsersController.passwordFailureResponse(response);
+        }
+
+        const currentToken = generateToken({ id: dbResult.rows[0].id, isAdmin: dbResult.rows[0].is_admin });
+        process.env.CURRENT_TOKEN = currentToken;
+
+        return UsersController.loginSuccessResponse(response, currentToken, dbResult.rows[0]);
+      })
+      .catch();
+  }
+
+  /**
+   *  return message for non existent email in login
+   *  @param {Object} response
+   *  @return {Object} json
+   */
+  static wrongEmailResponse(response) {
+    return response.status(404).json({
+      status: 'error',
+      error: validationErrors.noEmail,
+    });
+  }
+
+  /**
+   *  return message for non matching password in login
+   *  @param {Object} response
+   *  @return {Object} json
+   */
+  static passwordFailureResponse(response) {
+    return response.status(401).json({
+      status: 'error',
+      error: validationErrors.loginFailure,
+    });
+  }
+
+
+  /**
+   *  return message for successful login
+   *  @param {Object} response
+   *  @return {Object} json
+   */
+  static loginSuccessResponse(response, currentToken, data) {
+    return response.status(200).json({
+      status: 'success',
+      data: {
+        token: currentToken,
+        id: data.id,
+        firstName: data.firstname,
+        lastName: data.lastname,
+        email: data.email,
+      },
+    });
   }
 }
 
