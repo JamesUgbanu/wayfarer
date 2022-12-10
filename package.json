@@ -53,7 +53,7 @@
     "chai": "^4.2.0",
     "chai-http": "^4.3.0",
     "dotenv": "^8.0.0",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "express-validator": "^6.1.0",
     "jsonwebtoken": "^8.5.1",
     "nyc": "^14.1.1",
